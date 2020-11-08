@@ -23,6 +23,25 @@ import org.junit.jupiter.api.TestInstance.Lifecycle.*
         verifyAll { listener("Could not find item: pear") }
         confirmVerified(listener)
     }
+    @Test fun `shop should apply discounts correctly`() {
+        val orders = ArrayEvent<(Sequence<String>) -> (Unit)>()
+        val listener = mockk<(String) -> (Unit)>()
+        every { listener(any()) } just Runs
+        shop(orders)(listener)
+        orders(sequenceOf("orange", "orange", "orange", "orange", "apple"))
+        orders(sequenceOf("apple", "apple"))
+        orders(sequenceOf("apple", "orange", "apple"))
+        orders(sequenceOf("apple", "orange", "apple", "apple"))
+        orders(sequenceOf("apple", "orange", "orange", "apple", "orange"))
+        verifySequence {
+            listener("$1.35")
+            listener("$0.60")
+            listener("$0.85")
+            listener("$1.45")
+            listener("$1.10")
+        }
+        confirmVerified(listener)
+    }
     @Test fun `shop should respond to empty order with 0`() {
         val orders = ArrayEvent<(Sequence<String>) -> (Unit)>()
         val listener = mockk<(String) -> (Unit)>()
@@ -40,7 +59,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle.*
         orders(sequenceOf("apple", "orange", "apple", "apple"))
         orders(sequenceOf("apple", "orange", "pear", "apple"))
         verifySequence {
-            listener("$2.05")
+            listener("$1.45")
             listener("Could not find item: pear")
         }
         confirmVerified(listener)
