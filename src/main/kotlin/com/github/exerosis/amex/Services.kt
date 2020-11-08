@@ -27,12 +27,17 @@ fun NotificationService(onStatusUpdated: Event<(Order, Status) -> (Unit)>) {
 //Attempts to process a valid user order.
 fun ProcessingService(onOrderVerified: Event<(Order, Items) -> (Unit)>): Event<(Order, Status) -> (Unit)> {
     val onStatusUpdated = ArrayEvent<(Order, Status) -> (Unit)>()
+    val stock = object { var apples = 200; var oranges = 3000 }
     onOrderVerified { order, items ->
-        try {
-            //actually handle the order in a real application.
-            onStatusUpdated(order, Status.Shipped(Instant.now().plusSeconds(30)))
-        } catch (reason: Throwable) {
-            onStatusUpdated(order, Status.Refunded(reason.message!!))
-        }
+        val counts = items.groupingBy { it.toLowerCase() }.eachCount()
+        stock.apples -= counts["apple"] ?: 0
+        stock.oranges -= counts["orange"] ?: 0
+        //We can pretty easily support stocking with the same system
+        //we previously used for try catch. (perhaps rename refund)
+        onStatusUpdated(order, when {
+            stock.apples < 0 -> Status.Refunded("Apples are out of stock!")
+            stock.oranges < 0 -> Status.Refunded("Oranges are out of stock!")
+            else -> Status.Shipped(Instant.now().plusSeconds(30))
+        })
     }; return onStatusUpdated
 }

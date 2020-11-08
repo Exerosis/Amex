@@ -4,6 +4,7 @@ import Items
 import Order
 import Status
 
+
 val PRICES = mapOf<String, (Int) -> (Double)>(
     "apple" to { it / 2 * 0.60 + it % 2 * 0.60 },
     "orange" to { it / 3 * 0.50 + it % 3 * 0.25 }
